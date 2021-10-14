@@ -1,3 +1,5 @@
+import com.sun.istack.internal.NotNull;
+
 import java.util.*;
 
 public class LRUCache<S, T> {
@@ -7,28 +9,52 @@ public class LRUCache<S, T> {
     private final int maxSize;
 
     public LRUCache(int maxSize) {
+        if (maxSize < 1) throw new RuntimeException("maxSize less than one");
         list = new MyLinkedList<>();
         map = new HashMap<>();
         this.maxSize = maxSize;
     }
 
-    public T get(S key) {
+    public T get(@NotNull S key) {
+        assert size() <= maxSize;
+        int sizeBefore = size();
         T result = getAndRemove(key);
+        assert size() <= sizeBefore;
         if (result != null) putToFirstPosition(key, result);
+        assert size() == sizeBefore;
+        assert size() <= maxSize;
+        assert result == null || list.head.key == key;
         return result;
     }
 
-    public void put(S key, T value) {
+    public void put(@NotNull S key, @NotNull T value) {
+        assert size() <= maxSize;
+        int sizeBefore = size();
         getAndRemove(key);
+        assert size() <= sizeBefore;
         putToFirstPosition(key, value);
+        assert sizeBefore + 1 == size();
+        assert size() <= maxSize;
+        assert list.head.key == key && list.head.value == value;
+        assert map.get(key) == value;
+        assert map.get(key).key == key;
+    }
+
+    public int size() {
+        assert size() <= maxSize;
+        return list.size;
     }
 
     private T getAndRemove(S key) {
+        assert size() <= maxSize;
+        int sizeBefore = size();
         if (!map.containsKey(key)) return null;
         Node<S, T> oldNode = map.get(key);
         T result = oldNode.value;
         list.remove(oldNode);
         map.remove(key);
+        assert size() <= sizeBefore;
+        assert size() <= maxSize;
         return result;
     }
 
@@ -39,6 +65,8 @@ public class LRUCache<S, T> {
             map.remove(removed.key);
         }
         map.put(key, node);
+        assert node == list.head;
+        assert size() <= maxSize;
     }
 
     static class Node<S, T> {
@@ -67,6 +95,7 @@ public class LRUCache<S, T> {
         }
 
         Node<S, T> addFirst(S key, T value) {
+            int sizeBefore = size;
             Node<S, T> node = new Node<>(key, value);
             size++;
             if (head == EMPTY) {
@@ -74,6 +103,7 @@ public class LRUCache<S, T> {
                 node.prev = EMPTY;
                 head = node;
                 tail = node;
+                assert sizeBefore + 1 == size;
                 return node;
             }
             Node<S, T> leftNode = head.prev;
@@ -83,10 +113,14 @@ public class LRUCache<S, T> {
             node.prev = leftNode;
             node.next = rightNode;
             head = node;
+            assert sizeBefore + 1 == size;
+            assert head != tail;
             return node;
         }
 
         Node<S, T> removeLast() {
+            int sizeBefore = size;
+            Node<S, T> tailBefore = tail;
             if (tail == EMPTY) throw new RuntimeException("remove on empty list");
             size--;
             if (tail == head) {
@@ -95,10 +129,13 @@ public class LRUCache<S, T> {
             Node<S, T> removed = tail;
             tail = tail.prev;
             tail.next = null;
+            assert sizeBefore - 1 == size;
+            assert tailBefore.prev == tail;
             return removed;
         }
 
         void remove(Node<S, T> node) {
+            int sizeBefore = size;
             if (node == null) throw new RuntimeException("removing null");
             if (node == EMPTY) throw new RuntimeException("trying to remove empty element");
             size--;
@@ -108,6 +145,9 @@ public class LRUCache<S, T> {
             if (node == head) head = (node.next == null) ? EMPTY : node.next;
             prev.next = next;
             if (next != null) next.prev = prev;
+            assert sizeBefore - 1 == size;
+            assert node != tail;
+            assert node != head;
         }
     }
 }
