@@ -101,13 +101,13 @@ public class LRUCache<S, T> {
         void remove(Node<S, T> node) {
             if (node == null) throw new RuntimeException("removing null");
             if (node == EMPTY) throw new RuntimeException("trying to remove empty element");
+            size--;
             Node<S, T> prev = node.prev;
             Node<S, T> next = node.next;
             if (node == tail) tail = node.prev;
             if (node == head) head = (node.next == null) ? EMPTY : node.next;
             prev.next = next;
             if (next != null) next.prev = prev;
-            size--;
         }
     }
 }
