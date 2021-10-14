@@ -33,15 +33,14 @@ public class LRUCache<S, T> {
         getAndRemove(key);
         assert size() <= sizeBefore;
         putToFirstPosition(key, value);
-        assert sizeBefore + 1 == size();
+        assert sizeBefore <= size();
         assert size() <= maxSize;
         assert list.head.key == key && list.head.value == value;
-        assert map.get(key) == value;
+        assert map.get(key).value == value;
         assert map.get(key).key == key;
     }
 
     public int size() {
-        assert size() <= maxSize;
         return list.size;
     }
 
